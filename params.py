@@ -1,4 +1,4 @@
-import os, sys, json
+import os, sys, json, copy
 
 
 size_methods = ["vmlinux", "GZIP-bzImage", "GZIP-vmlinux", "GZIP", "BZIP2-bzImage", 
@@ -23,7 +23,7 @@ def get_possible_configurations(hyperparams_list):
             if len(next_possible_configs) > 0:
                 for config in next_possible_configs:
                     config[key] = value
-                    configs.append(config)
+                    configs.append(copy.deepcopy(config))
             
             else:
                 configs.append({key:value})
