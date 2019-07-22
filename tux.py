@@ -116,6 +116,7 @@ class TuxML:
             line = ",".join([str(i) for i in results.values])
             with open(self.resultsPath+'/results.csv',"a") as f:
                 f.write(line+"\n")
+                f.close()
         else:
             pd.DataFrame([results]).to_csv(self.resultsPath+'/results.csv', index=False)
     
@@ -124,6 +125,7 @@ class TuxML:
             line = ",".join([str(i) for i in feature_importance.values])
             with open(self.resultsPath+'/feature_importance.csv',"a") as f:
                 f.write(line+"\n")
+                f.close()
         else:
             pd.DataFrame([feature_importance]).to_csv(self.resultsPath+'/feature_importance.csv', index=False)
     
