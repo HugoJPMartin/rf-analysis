@@ -41,12 +41,16 @@ def get_params():
         "paceSampleSize":None,
         "nb_bins":10,
         "nb_yes":1,
-        "columns_to_drop":["cid"]+size_methods
+        "columns_to_drop":["cid"]+size_methods,
+        "algo":"rf"
     }
     
     
     #List all possible hyperparams, in order to avoid error with scikit
-    possible_hyperparams = ["criterion","splitter","max_features","max_depth","min_samples_split","min_samples_leaf", "min_weight_fraction_leaf","max_leaf_nodes","random_state","min_impurity_decrease","n_estimators"]
+    possible_hyperparams = [
+        "criterion","splitter","max_features","max_depth","min_samples_split","min_samples_leaf", "min_weight_fraction_leaf","max_leaf_nodes","random_state","min_impurity_decrease","n_estimators",
+        "loss","learning_rate","subsample","presort"
+    ]
 
     hyperparams = {}
 

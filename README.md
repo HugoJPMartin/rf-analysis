@@ -10,6 +10,7 @@ docker run -v $(pwd)/results:/app/results:Z rf-analysis
 Multiple configuration options are available.
 
 * perf : target column of the dataset, default at "vmlinux"
+* resultsPath : directory for results, default at "results/", don't foregt to change docker volume if you change it
 * nbFolds : number of folds for cross-validation, default at "10"
 * minSampleSize : minimum size for the training set, default at "100
 * maxSamplesize : maximum size for the training set, default at 90% of the size of the dataset
@@ -17,6 +18,7 @@ Multiple configuration options are available.
 * nb_bins : number of different training set sizes that the algorithm will run over, default at 10
 * nb_yes : set at 0 to ignore the column nb_yes, default at 1
 * columns_to_drop : columns to drop from the dataset when learning on, default at "cid" + all columns for size
+* algo : ML algorithm to use, default at "rf" for Random Forest, accept also "gb" for Grandient Boosting and "dt" for Decision Tree. Change results.csv file when changing algorithm.
 
 
 All scikit learn random forest params : 
