@@ -10,7 +10,7 @@ docker run -v $(pwd)/results:/app/results:Z rf-analysis
 Multiple configuration options are available.
 
 * perf : target column of the dataset, default at "vmlinux"
-* resultsPath : directory for results, default at "results/", don't foregt to change docker volume if you change it
+* resultsPath : directory for results, default at "results/", don't forget to change docker volume if you change it
 * nbFolds : number of folds for cross-validation, default at "10"
 * minSampleSize : minimum size for the training set, default at "100
 * maxSamplesize : maximum size for the training set, default at 90% of the size of the dataset

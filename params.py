@@ -49,7 +49,7 @@ def get_params():
     #List all possible hyperparams, in order to avoid error with scikit
     possible_hyperparams = [
         "criterion","splitter","max_features","max_depth","min_samples_split","min_samples_leaf", "min_weight_fraction_leaf","max_leaf_nodes","random_state","min_impurity_decrease","n_estimators",
-        "loss","learning_rate","subsample","presort"
+        "loss","learning_rate","subsample","presort","n_jobs"
     ]
 
     hyperparams = {}

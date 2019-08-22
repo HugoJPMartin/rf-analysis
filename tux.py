@@ -13,7 +13,7 @@ warnings.simplefilter(action='ignore', category=DeprecationWarning)
 
 class TuxML:
     
-    def __init__(self, dataset=None, resultsPath=None, perf="vmlinux", graphPath=None, nbFolds = 10, minSampleSize=2, maxSampleSize=None, paceSampleSize=None, nb_bins=50, hyperparams=None, columns_to_drop=None, nb_yes=1, algo="rf"):
+    def __init__(self, dataset=None, resultsPath=None, perf="vmlinux", graphPath=None, nbFolds = 10, minSampleSize=2, maxSampleSize=None, paceSampleSize=None, nb_bins=50, hyperparams=None, columns_to_drop=None, nb_yes=1, algo="rf", semaphore=None):
         
         self.dataset = dataset
         
@@ -53,6 +53,7 @@ class TuxML:
             
         self.columns_to_drop = columns_to_drop
         self.nb_yes = nb_yes
+        self.semaphore = semaphore
         
         self.saveFile = None
         self.dfResults = None
@@ -118,12 +119,14 @@ class TuxML:
                     
                     
                     
-    def _runRF(self, train_size):
+    def _run(self, train_size):
         df = self.dataset
         
         dfErrors = pd.DataFrame()
         dfImportance = pd.DataFrame()
         col = self.dataset.drop(columns=self.columns_to_drop, errors="ignore").columns
+        
+        errorsFold = []
         
         for i in range(0,self.nbFolds):
             print("Fold",i)
@@ -131,7 +134,13 @@ class TuxML:
             X_train, X_test, y_train, y_test = train_test_split(self.dataset.drop(columns=self.columns_to_drop, errors="ignore"), self.dataset[self.perf], train_size=train_size)
             
             # Give the hyperparams to build the model
-            reg = ensemble.RandomForestRegressor(**self.hyperparams)
+            
+            if self.algo == "rf":
+                reg = ensemble.RandomForestRegressor(**self.hyperparams)
+            if self.algo == "gb":
+                reg = ensemble.GradientBoostingRegressor(**self.hyperparams)
+            if self.algo == "dt":
+                reg = tree.DecisionTreeRegressor(**self.hyperparams)
 
             # Train the random forest
             reg.fit(X_train, y_train)
@@ -139,67 +148,19 @@ class TuxML:
             # Prediction and scoring
             y_pred = reg.predict(X_test)
             
+            dfErrorsFold = pd.DataFrame({"% error":((y_pred - y_test)/y_test).abs()*100})
+            errorsFold.append(dfErrorsFold["% error"].mean())
+            
             dfErrors = dfErrors.append([pd.DataFrame({"% error":((y_pred - y_test)/y_test).abs()*100})], ignore_index=True)
             
             dfImportance = dfImportance.append([pd.Series(reg.feature_importances_, index=col.values)])
             
-        return dfErrors["% error"].describe(), dfImportance.mean()
+        folds = pd.Series(errorsFold)
+        results = dfErrors["% error"].describe()
+        results["fold_mean"] = folds.mean()
+        results["fold_std"] = folds.std()
+        return results, dfImportance.mean()
                     
-                    
-    def _runGB(self, train_size):
-        df = self.dataset
-        
-        dfErrors = pd.DataFrame()
-        dfImportance = pd.DataFrame()
-        col = self.dataset.drop(columns=self.columns_to_drop, errors="ignore").columns
-        
-        for i in range(0,self.nbFolds):
-            print("Fold",i)
-            # Split the data
-            X_train, X_test, y_train, y_test = train_test_split(self.dataset.drop(columns=self.columns_to_drop, errors="ignore"), self.dataset[self.perf], train_size=train_size)
-            
-            # Give the hyperparams to build the model
-            reg = ensemble.GradientBoostingRegressor(**self.hyperparams)
-
-            # Train the random forest
-            reg.fit(X_train, y_train)
-
-            # Prediction and scoring
-            y_pred = reg.predict(X_test)
-            
-            dfErrors = dfErrors.append([pd.DataFrame({"% error":((y_pred - y_test)/y_test).abs()*100})], ignore_index=True)
-            
-            dfImportance = dfImportance.append([pd.Series(reg.feature_importances_, index=col.values)])
-            
-        return dfErrors["% error"].describe(), dfImportance.mean()
-          
-    
-    def _runDT(self, train_size):
-        df = self.dataset
-        
-        dfErrors = pd.DataFrame()
-        dfImportance = pd.DataFrame()
-        col = self.dataset.drop(columns=self.columns_to_drop, errors="ignore").columns
-        
-        for i in range(0,self.nbFolds):
-            print("Fold",i)
-            # Split the data
-            X_train, X_test, y_train, y_test = train_test_split(self.dataset.drop(columns=self.columns_to_drop, errors="ignore"), self.dataset[self.perf], train_size=train_size)
-            
-            # Give the hyperparams to build the model
-            reg = tree.DecisionTreeRegressor(**self.hyperparams)
-
-            # Train the random forest
-            reg.fit(X_train, y_train)
-
-            # Prediction and scoring
-            y_pred = reg.predict(X_test)
-            
-            dfErrors = dfErrors.append([pd.DataFrame({"% error":((y_pred - y_test)/y_test).abs()*100})], ignore_index=True)
-            
-            dfImportance = dfImportance.append([pd.Series(reg.feature_importances_, index=col.values)])
-            
-        return dfErrors["% error"].describe(), dfImportance.mean()
     
     
     def _save_results(self, results, train_size, random_id):
@@ -222,15 +183,16 @@ class TuxML:
             pd.DataFrame([feature_importance]).to_csv(self.resultsPath+'/feature_importance.csv', index=False)
     
     def start(self):
+        if not self.semaphore is None:
+            self.semaphore.acquire()
+        print("Starting")
         random_id = random()
         for train_size in range(self.minSampleSize, self.maxSampleSize, self.paceSampleSize):
             print("Train size",train_size)
-            if self.algo == "rf":
-                results, feature_importance = self._runRF(train_size)
-            if self.algo == "gb":
-                results, feature_importance = self._runGB(train_size)
-            if self.algo == "dt":
-                results, feature_importance = self._runDT(train_size)
+            results, feature_importance = self._run(train_size)
             
             self._save_results(results, train_size, random_id)
             self._save_feature_importance(feature_importance)
+        print("Finishing")
+        if not self.semaphore is None:
+            self.semaphore.release()
