@@ -1,5 +1,5 @@
 FROM frolvlad/alpine-python-machinelearning
 COPY . /app
-RUN wget https://gitlab.com/FAMILIAR-project/tuxml-size-analysis-datasets/raw/master/all_size_withyes.pkl -O app/all_size_withyes.pkl
+RUN wget http://37.187.140.181/tuxml_dataset/all_size_withyes_covariance.pkl -O app/all_size_withyes.pkl
 WORKDIR /app
 ENTRYPOINT ["python","-u","./index.py"]
